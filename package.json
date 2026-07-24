@@ -1,0 +1,17 @@
+{
+  "name": "neatcontext-dokploy",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A NeatContext Team Library for evidence-first Dokploy issue investigations.",
+  "type": "module",
+  "scripts": {
+    "validate": "node scripts/validate-library.mjs",
+    "test": "node --test && node scripts/validate-library.mjs",
+    "check": "npm test"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT"
+}
+
