@@ -57,7 +57,7 @@ NeatContext Team Library format version 1 is marked by `library.json`.
 | `profiles/dokploy.md` | Shared | Investigation policy, source precedence, safety constraints, and answer contract |
 | `knowledge/dokploy/` | Shared | Public, citable Dokploy knowledge and bounded case studies |
 | `extensions/` | Shared | Reserved; intentionally contains no executable package |
-| `templates/private-case/` | Shared | Blank files a user copies before adding evidence |
+| `templates/private-case.md` | Shared | One best-effort case file a user copies before adding evidence |
 | `private/` | Personal | Git-ignored cases linked individually in NeatContext |
 
 Only top-level directories below `knowledge/` are Team Library knowledge
@@ -82,8 +82,9 @@ must be rechecked before being reported as current.
 
 ## Private case lifecycle
 
-1. Copy `templates/private-case/` into a new directory below `private/cases/`.
-2. Redact and fill the case files.
+1. Create a new directory below `private/cases/`.
+2. Copy `templates/private-case.md` into it as `case.md`, then redact and fill
+   that single file as best effort.
 3. Link that one case directory as a personal knowledge folder.
 4. Select it alongside the shared `dokploy` knowledge folder.
 5. Remove the personal link or archive/delete the local folder when finished.

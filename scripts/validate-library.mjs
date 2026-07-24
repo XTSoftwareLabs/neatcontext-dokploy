@@ -39,16 +39,11 @@ const requiredDirectories = [
   "knowledge",
   "extensions",
   "private",
-  "templates/private-case"
+  "templates"
 ];
 
 const requiredTemplateFiles = [
-  "templates/private-case/README.md",
-  "templates/private-case/symptoms.md",
-  "templates/private-case/environment.md",
-  "templates/private-case/timeline.md",
-  "templates/private-case/hypotheses.md",
-  "templates/private-case/evidence/README.md"
+  "templates/private-case.md"
 ];
 
 export class LibraryValidationError extends Error {
@@ -310,6 +305,14 @@ async function validatePrivateBoundary(root, issues, checkGit) {
     } catch {
       issues.push(`${templatePath}: required private-case template file is missing`);
     }
+  }
+
+  const templateFiles = await collectFiles(join(root, "templates"), issues, root);
+  const unexpectedTemplates = templateFiles
+    .map((path) => toPosixPath(relative(root, path)))
+    .filter((path) => path !== "templates/private-case.md");
+  for (const path of unexpectedTemplates) {
+    issues.push(`${path}: private cases use only the single templates/private-case.md file`);
   }
 
   if (!checkGit) {

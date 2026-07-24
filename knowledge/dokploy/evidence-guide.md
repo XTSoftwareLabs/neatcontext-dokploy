@@ -35,19 +35,11 @@ hypothesis table. For example:
 - Interpretation: `The provider object may lack a required field at the auth
   call`.
 
-## Useful private-case files
+## Keep the private case in one file
 
-Use descriptive, sortable names:
-
-```text
-evidence/
-  2026-07-23T101241Z-dokploy-service-redacted.log
-  2026-07-23T101238Z-github-delivery-metadata-redacted.json
-  2026-07-23-preview-page-redacted.txt
-```
-
-For a screenshot or binary artifact, add a neighboring Markdown transcription
-that records capture time, source, visible text, and what was redacted. Text is
+Use the evidence section of the private `case.md`. Paste only the smallest
+useful redacted excerpt and give it an evidence ID, capture time, and source.
+Summarize a screenshot or binary artifact as text in the same file. Text is
 more reliably searchable and citable by connected AI clients.
 
 ## Redaction rules

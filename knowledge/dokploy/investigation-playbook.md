@@ -80,8 +80,8 @@ commands that print secret-bearing service configuration.
 
 ## 3. Build a timeline
 
-Use the private `timeline.md` template. Put observations and interpretations in
-different columns.
+Use the timeline section in the private `case.md`. Put observations and
+interpretations in different columns.
 
 At minimum include:
 

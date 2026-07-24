@@ -3,7 +3,8 @@
 Last verified: 2026-07-25
 
 This folder is the shared, public half of a Dokploy investigation Context. Pair
-it with one user-owned case folder created from `templates/private-case/`.
+it with one user-owned case folder containing a `case.md` copied from
+`templates/private-case.md`.
 
 ## Start here
 

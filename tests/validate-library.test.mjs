@@ -11,15 +11,6 @@ import {
 } from "../scripts/validate-library.mjs";
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const templateFiles = [
-  "README.md",
-  "symptoms.md",
-  "environment.md",
-  "timeline.md",
-  "hypotheses.md",
-  "evidence/README.md"
-];
-
 const validProfile = `---
 id: dokploy-issue-investigation
 name: Dokploy Issue Investigation
@@ -45,7 +36,7 @@ async function createFixture() {
   await mkdir(join(root, "knowledge", "dokploy", "case-studies"), { recursive: true });
   await mkdir(join(root, "extensions"), { recursive: true });
   await mkdir(join(root, "private"), { recursive: true });
-  await mkdir(join(root, "templates", "private-case", "evidence"), { recursive: true });
+  await mkdir(join(root, "templates"), { recursive: true });
   await writeFile(join(root, "library.json"), '{"neatcontext":1}\n');
   await writeFile(join(root, "README.md"), "# Fixture\n");
   await writeFile(join(root, "DESIGN.md"), "# Design\n");
@@ -56,9 +47,7 @@ async function createFixture() {
     join(root, "knowledge", "dokploy", "case-studies", "issue-4898-preview-deployments.md"),
     validCaseStudy
   );
-  for (const templateFile of templateFiles) {
-    await writeFile(join(root, "templates", "private-case", templateFile), "# Template\n");
-  }
+  await writeFile(join(root, "templates", "private-case.md"), "# Private case\n");
   return root;
 }
 
@@ -135,6 +124,26 @@ test("rejects broken local Markdown links in shared content", async (context) =>
     (error) => {
       assert.ok(error instanceof LibraryValidationError);
       assert.ok(error.issues.some((issue) => issue.includes("local link target does not exist")));
+      return true;
+    }
+  );
+});
+
+test("rejects multi-file private case templates", async (context) => {
+  const root = await createFixture();
+  context.after(() => rm(root, { recursive: true, force: true }));
+  await mkdir(join(root, "templates", "private-case"), { recursive: true });
+  await writeFile(join(root, "templates", "private-case", "symptoms.md"), "# Symptoms\n");
+
+  await assert.rejects(
+    validateLibrary(root, { checkGit: false }),
+    (error) => {
+      assert.ok(error instanceof LibraryValidationError);
+      assert.ok(
+        error.issues.some((issue) =>
+          issue.includes("private cases use only the single templates/private-case.md file")
+        )
+      );
       return true;
     }
   );

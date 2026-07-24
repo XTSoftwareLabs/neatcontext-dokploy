@@ -26,21 +26,22 @@ cd neatcontext-dokploy
 
 ### 2. Create a private case
 
-Copy the folder [`templates/private-case`](templates/private-case) to:
+Create a folder for the case:
 
 ```text
 private/cases/<your-case-name>
 ```
 
-For example:
+Then copy [`templates/private-case.md`](templates/private-case.md) into that
+folder as:
 
 ```text
-private/cases/preview-deployments-not-created
+private/cases/<your-case-name>/case.md
 ```
 
-Fill in `symptoms.md`, `environment.md`, and `timeline.md`, then put redacted
-text logs or other artifacts in its `evidence/` folder. Git ignores everything
-under `private/`.
+Fill in `case.md` as best you can. Unknown or irrelevant fields can stay blank.
+Paste only the smallest useful redacted log or error excerpts into that same
+file. Git ignores everything under `private/`.
 
 ### 3. Connect the public Team Library
 
@@ -101,7 +102,7 @@ you attach and processes them under that client’s own privacy policy.
 library.json                 NeatContext Team Library marker
 profiles/                    Shared Dokploy domain profile
 knowledge/dokploy/           Shared public investigation knowledge
-templates/private-case/      Blank local-case template
+templates/private-case.md    Single-file local-case template
 private/                     Ignored user evidence (never Team Library content)
 extensions/                  Reserved for future read-only extensions
 ```
