@@ -30,11 +30,25 @@ https://github.com/Dokploy/dokploy/issues/4898
 Snapshot: 73e4fdd757da90fb1fe347a92b92237e6712f98d
 `;
 
+const validExtensionManifest = {
+  id: "dokploy-github",
+  name: "Dokploy GitHub",
+  version: "1.0.0",
+  connection: { kind: "none" },
+  mcpServer: {
+    transport: "stdio",
+    command: "node",
+    args: ["./server.cjs"],
+    requiresConnection: false
+  },
+  allowed_profiles: []
+};
+
 async function createFixture() {
   const root = await mkdtemp(join(tmpdir(), "neatcontext-dokploy-test-"));
   await mkdir(join(root, "profiles"), { recursive: true });
   await mkdir(join(root, "knowledge", "dokploy", "case-studies"), { recursive: true });
-  await mkdir(join(root, "extensions"), { recursive: true });
+  await mkdir(join(root, "extensions", "dokploy-github"), { recursive: true });
   await mkdir(join(root, "private"), { recursive: true });
   await mkdir(join(root, "templates"), { recursive: true });
   await writeFile(join(root, "library.json"), '{"neatcontext":1}\n');
@@ -48,6 +62,14 @@ async function createFixture() {
     validCaseStudy
   );
   await writeFile(join(root, "templates", "private-case.md"), "# Private case\n");
+  await writeFile(
+    join(root, "extensions", "dokploy-github", "neatcontext-extension.json"),
+    `${JSON.stringify(validExtensionManifest, null, 2)}\n`
+  );
+  await writeFile(
+    join(root, "extensions", "dokploy-github", "server.cjs"),
+    '"use strict";\n'
+  );
   return root;
 }
 
@@ -88,7 +110,8 @@ test("validates a complete Team Library without reading private case contents", 
     formatVersion: 1,
     profiles: 1,
     knowledgeFolders: 1,
-    knowledgeFiles: 2
+    knowledgeFiles: 2,
+    extensions: 1
   });
 });
 
@@ -149,10 +172,41 @@ test("rejects multi-file private case templates", async (context) => {
   );
 });
 
+test("rejects a Dokploy GitHub extension that could require credentials", async (context) => {
+  const root = await createFixture();
+  context.after(() => rm(root, { recursive: true, force: true }));
+  await writeFile(
+    join(root, "extensions", "dokploy-github", "neatcontext-extension.json"),
+    `${JSON.stringify(
+      {
+        ...validExtensionManifest,
+        connection: { kind: "bearer" },
+        mcpServer: {
+          ...validExtensionManifest.mcpServer,
+          requiresConnection: true
+        }
+      },
+      null,
+      2
+    )}\n`
+  );
+
+  await assert.rejects(
+    validateLibrary(root, { checkGit: false }),
+    (error) => {
+      assert.ok(error instanceof LibraryValidationError);
+      assert.ok(error.issues.some((issue) => issue.includes('connection.kind must be "none"')));
+      assert.ok(error.issues.some((issue) => issue.includes("connection-free stdio server")));
+      return true;
+    }
+  );
+});
+
 test("the checked-in repository is a valid Dokploy Team Library", async () => {
   const summary = await validateLibrary(repositoryRoot);
   assert.equal(summary.formatVersion, 1);
   assert.equal(summary.profiles, 1);
   assert.equal(summary.knowledgeFolders, 1);
   assert.ok(summary.knowledgeFiles >= 5);
+  assert.equal(summary.extensions, 1);
 });
