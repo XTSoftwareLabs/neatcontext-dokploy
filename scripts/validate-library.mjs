@@ -39,16 +39,11 @@ const requiredDirectories = [
   "knowledge",
   "extensions",
   "private",
-  "templates/private-case"
+  "templates"
 ];
 
 const requiredTemplateFiles = [
-  "templates/private-case/README.md",
-  "templates/private-case/symptoms.md",
-  "templates/private-case/environment.md",
-  "templates/private-case/timeline.md",
-  "templates/private-case/hypotheses.md",
-  "templates/private-case/evidence/README.md"
+  "templates/private-case.md"
 ];
 
 export class LibraryValidationError extends Error {
@@ -303,6 +298,107 @@ async function validateKnowledge(root, issues) {
   return { folders: folderSummaries, files: knowledgeFileCount };
 }
 
+async function validateExtensions(root, issues) {
+  const extensionsRoot = join(root, "extensions");
+  let entries = [];
+  try {
+    entries = await readdir(extensionsRoot, { withFileTypes: true });
+  } catch (error) {
+    issues.push(`extensions: cannot read directory (${error.message})`);
+    return [];
+  }
+
+  for (const entry of entries) {
+    if (entry.isSymbolicLink()) {
+      issues.push(`extensions/${entry.name}: symbolic links are not allowed`);
+    } else if (!entry.isDirectory()) {
+      issues.push(`extensions/${entry.name}: extension packages must be directories`);
+    }
+  }
+
+  const folders = entries.filter((entry) => entry.isDirectory() && !entry.isSymbolicLink());
+  if (!folders.some((entry) => entry.name === "dokploy-github")) {
+    issues.push("extensions/dokploy-github: the read-only GitHub extension is required");
+  }
+
+  const extensions = [];
+  for (const folder of folders) {
+    const folderPath = join(extensionsRoot, folder.name);
+    await collectFiles(folderPath, issues, root);
+    const manifestPath = join(folderPath, "neatcontext-extension.json");
+    let manifest;
+    try {
+      manifest = JSON.parse(await readFile(manifestPath, "utf8"));
+    } catch (error) {
+      issues.push(
+        `extensions/${folder.name}/neatcontext-extension.json: missing or invalid JSON (${error.message})`
+      );
+      continue;
+    }
+
+    if (
+      !manifest ||
+      Array.isArray(manifest) ||
+      typeof manifest !== "object" ||
+      !/^[a-z0-9][a-z0-9-]*$/.test(manifest.id ?? "")
+    ) {
+      issues.push(
+        `extensions/${folder.name}/neatcontext-extension.json: a lowercase kebab-case id is required`
+      );
+      continue;
+    }
+    if (manifest.id !== folder.name) {
+      issues.push(
+        `extensions/${folder.name}/neatcontext-extension.json: id must match its folder name`
+      );
+    }
+    extensions.push({ id: manifest.id, path: folder.name });
+
+    if (folder.name !== "dokploy-github") {
+      continue;
+    }
+    if (manifest.connection?.kind !== "none") {
+      issues.push(
+        'extensions/dokploy-github/neatcontext-extension.json: connection.kind must be "none"'
+      );
+    }
+    if (
+      manifest.mcpServer?.transport !== "stdio" ||
+      manifest.mcpServer?.command !== "node" ||
+      !Array.isArray(manifest.mcpServer?.args) ||
+      manifest.mcpServer.args.length !== 1 ||
+      manifest.mcpServer.args[0] !== "./server.cjs" ||
+      manifest.mcpServer?.requiresConnection !== false
+    ) {
+      issues.push(
+        "extensions/dokploy-github/neatcontext-extension.json: expected the connection-free stdio server ./server.cjs"
+      );
+    }
+    if (!Array.isArray(manifest.allowed_profiles)) {
+      issues.push(
+        "extensions/dokploy-github/neatcontext-extension.json: allowed_profiles must be an array"
+      );
+    }
+    try {
+      const server = await readFile(join(folderPath, "server.cjs"), "utf8");
+      if (!server.includes('"use strict"')) {
+        issues.push("extensions/dokploy-github/server.cjs: self-contained server is missing");
+      }
+      if (/\bname:\s*["']neatcontext_/i.test(server)) {
+        issues.push(
+          "extensions/dokploy-github/server.cjs: the neatcontext_ tool prefix is reserved"
+        );
+      }
+    } catch (error) {
+      issues.push(
+        `extensions/dokploy-github/server.cjs: missing or unreadable (${error.message})`
+      );
+    }
+  }
+
+  return extensions;
+}
+
 async function validatePrivateBoundary(root, issues, checkGit) {
   for (const templatePath of requiredTemplateFiles) {
     try {
@@ -310,6 +406,14 @@ async function validatePrivateBoundary(root, issues, checkGit) {
     } catch {
       issues.push(`${templatePath}: required private-case template file is missing`);
     }
+  }
+
+  const templateFiles = await collectFiles(join(root, "templates"), issues, root);
+  const unexpectedTemplates = templateFiles
+    .map((path) => toPosixPath(relative(root, path)))
+    .filter((path) => path !== "templates/private-case.md");
+  for (const path of unexpectedTemplates) {
+    issues.push(`${path}: private cases use only the single templates/private-case.md file`);
   }
 
   if (!checkGit) {
@@ -407,6 +511,7 @@ export async function validateLibrary(rootPath, options = {}) {
   await validateMarker(root, issues);
   const profiles = await validateProfiles(root, issues);
   const knowledge = await validateKnowledge(root, issues);
+  const extensions = await validateExtensions(root, issues);
 
   const checkGit =
     options.checkGit === undefined ? await isDirectory(join(root, ".git")) : options.checkGit;
@@ -421,7 +526,8 @@ export async function validateLibrary(rootPath, options = {}) {
     formatVersion: 1,
     profiles: profiles.length,
     knowledgeFolders: knowledge.folders.length,
-    knowledgeFiles: knowledge.files
+    knowledgeFiles: knowledge.files,
+    extensions: extensions.length
   };
 }
 
@@ -434,7 +540,8 @@ if (invokedPath === modulePath) {
     console.log(
       `Valid NeatContext Team Library: ${summary.profiles} profile(s), ` +
         `${summary.knowledgeFolders} knowledge folder(s), ` +
-        `${summary.knowledgeFiles} searchable document(s).`
+        `${summary.knowledgeFiles} searchable document(s), ` +
+        `${summary.extensions} extension(s).`
     );
   } catch (error) {
     console.error(error instanceof Error ? error.message : String(error));

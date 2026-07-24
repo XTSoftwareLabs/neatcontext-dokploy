@@ -3,7 +3,9 @@
 Last verified: 2026-07-25
 
 This folder is the shared, public half of a Dokploy investigation Context. Pair
-it with one user-owned case folder created from `templates/private-case/`.
+it with one user-owned case folder containing a `case.md` copied from
+`templates/private-case.md`. When installed and selected, the **Dokploy GitHub**
+extension adds current public repository evidence to that same Context.
 
 ## Start here
 
@@ -30,6 +32,11 @@ These links are public evidence, not standing truth about a user’s installatio
 Moving pages, branches, issue states, and new releases must be rechecked during
 an investigation. Prefer an immutable release tag, commit, or image digest when
 making an implementation claim.
+
+Use the Dokploy GitHub extension to perform that recheck without leaving the
+Context. It can retrieve issues and comments, pull requests, releases, commits,
+comparisons, and source files. Pin source reads to the deployed tag or commit;
+the default branch describes only its state at retrieval time.
 
 ## Retrieval terms
 

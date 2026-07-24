@@ -4,20 +4,22 @@
 
 This repository is a NeatContext Team Library: a read-only, Git-versioned set of
 public Dokploy investigation resources. It deliberately does not embed private
-incident data, a Dokploy fork, an AI model, credentials, or executable
-connectors.
+incident data, a Dokploy fork, an AI model, or credentials. It ships one
+auditable extension source package, which cannot execute until a user explicitly
+installs a managed snapshot in NeatContext.
 
-The Context assembled by a user has two inputs:
+The Context assembled by a user has three inputs:
 
 ```text
-shared Git clone                           user-owned local folder
-  profiles/dokploy.md                        private/cases/<case>/
-  knowledge/dokploy/                         symptoms + evidence
-           \                                      /
-            \                                    /
-             +---- one NeatContext Context -----+
-                              |
-                       connected AI client
+shared Git clone                explicit trust/install       user-owned folder
+ profiles/dokploy.md                                      private/cases/<case>/
+ knowledge/dokploy/          extension source -------->      case.md
+       |                      managed snapshot                    |
+       +---------------------------+------------------------------+
+                                   |
+                         one NeatContext Context
+                                   |
+                          connected AI client
 ```
 
 This separation matters:
@@ -25,7 +27,10 @@ This separation matters:
 - NeatContext discovers the shared profile and public knowledge by Team Library
   convention and treats them as read-only.
 - The user links one ignored case folder as a personal knowledge folder.
-- Both folders can be searched in the same Context.
+- The Team extension source is inert until the user reviews and installs a
+  managed snapshot; that snapshot exposes only read capabilities.
+- Public knowledge, live public GitHub results, and private evidence can be used
+  in the same Context.
 - A user can pull public updates without merging or publishing private evidence.
 
 ## Goals
@@ -36,7 +41,8 @@ This separation matters:
 - Treat the user’s instance evidence as authoritative for what happened on that
   instance.
 - Keep sensitive material out of Git by default.
-- Keep the Team Library inert: no extension code executes from this clone.
+- Keep the Team Library source inert: no extension code executes from this
+  clone without explicit user installation.
 
 ## Non-goals
 
@@ -56,8 +62,8 @@ NeatContext Team Library format version 1 is marked by `library.json`.
 | --- | --- | --- |
 | `profiles/dokploy.md` | Shared | Investigation policy, source precedence, safety constraints, and answer contract |
 | `knowledge/dokploy/` | Shared | Public, citable Dokploy knowledge and bounded case studies |
-| `extensions/` | Shared | Reserved; intentionally contains no executable package |
-| `templates/private-case/` | Shared | Blank files a user copies before adding evidence |
+| `extensions/dokploy-github/` | Shared | Inert source package for optional, GET-only public GitHub retrieval |
+| `templates/private-case.md` | Shared | One best-effort case file a user copies before adding evidence |
 | `private/` | Personal | Git-ignored cases linked individually in NeatContext |
 
 Only top-level directories below `knowledge/` are Team Library knowledge
@@ -80,10 +86,24 @@ Public documents record a “last verified” date and prefer stable release,
 commit, or documentation links. Time-sensitive status such as an open issue
 must be rechecked before being reported as current.
 
+## Extension boundary
+
+`extensions/dokploy-github/` is a dependency-free stdio MCP server following
+NeatContext’s Team Library extension contract. NeatContext discovers it as an
+uninstalled candidate and requires an explicit trust decision before copying a
+managed snapshot. Updates to the Git clone do not silently update that snapshot.
+
+The extension hardcodes `https://api.github.com` and `Dokploy/dokploy`, accepts
+only conservative issue/PR identifiers, refs, timestamps, and repository paths,
+and sends only `GET` requests. It has no credential connection. Responses are
+size-bounded and preserve source URLs, retrieval times, and GitHub rate-limit
+metadata.
+
 ## Private case lifecycle
 
-1. Copy `templates/private-case/` into a new directory below `private/cases/`.
-2. Redact and fill the case files.
+1. Create a new directory below `private/cases/`.
+2. Copy `templates/private-case.md` into it as `case.md`, then redact and fill
+   that single file as best effort.
 3. Link that one case directory as a personal knowledge folder.
 4. Select it alongside the shared `dokploy` knowledge folder.
 5. Remove the personal link or archive/delete the local folder when finished.

@@ -1,0 +1,17 @@
+{
+  "id": "dokploy-github",
+  "name": "Dokploy GitHub",
+  "version": "1.0.0",
+  "description": "Read-only retrieval of public issues, pull requests, releases, commits, comparisons, and source files from Dokploy/dokploy.",
+  "publisher": "XT Software Labs",
+  "connection": {
+    "kind": "none"
+  },
+  "mcpServer": {
+    "transport": "stdio",
+    "command": "node",
+    "args": ["./server.cjs"],
+    "requiresConnection": false
+  },
+  "allowed_profiles": []
+}

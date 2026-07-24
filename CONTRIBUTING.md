@@ -15,6 +15,10 @@ Contributions should improve the shared, public Dokploy investigation boundary.
   is established by primary evidence.
 - Preserve security fixes and controls. Do not document disabling them as a
   solution.
+- Keep extensions dependency-free, read-only, narrowly scoped, and inert until
+  explicit installation. Add tests for accepted and rejected identifiers,
+  network methods, framing, response bounds, and error handling.
+- Increment an extension version when changing its installed package.
 - Increment the profile’s `policy_version` when changing typed policy,
   authority, or safety rules.
 
