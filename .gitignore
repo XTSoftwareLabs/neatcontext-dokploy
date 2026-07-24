@@ -1,0 +1,11 @@
+# User-owned investigation material. Keep this rule first and broad: every
+# case created below private/ must remain outside the shared Team Library.
+/private/*
+!/private/.gitkeep
+
+# Local tooling and operating-system noise.
+node_modules/
+coverage/
+.DS_Store
+Thumbs.db
+
